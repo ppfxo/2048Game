@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>2048_Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #main-context {
+            width: 500px;
+            height: 500px;
+            border-radius: 10px;
+            margin: 40px 300px;
+            background-color: #bbada0;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            border-radius: 5px;
+            margin: 20px 0 0 20px;
+            background-color: #ccc0b3;
+            float: left;
+            font-size: 40px;
+            color: #fff;
+            line-height: 100px;
+            text-align: center;
+        }
+        #game-over {
+            width: 500px;
+            height: 500px;
+            border-radius: 10px;
+            background-color: rgba(85, 85, 85, 0.7);
+            position: absolute;
+            top: 40px;
+            left: 300px;
+            text-align: center;
+        }
+        .hiden {
+            display: none;
+        }
+        #game-over div {
+            margin-top: 150px;
+            color: #fff;
+        }
+        button {
+            width: 200px;
+            height: 40px;
+            border-style: none;
+            background-color: #bbada0;
+            color: #776e65;
+            font-size: 30px;
+        }
+        button:hover {
+            cursor: pointer;
+        }
+        #info {
+            width: 500px;
+            margin: 40px 300px;
+        }
+        p {
+            font-size: 30px;
+        }
+        .n2{color: #776e65;background-color:#eee3da;}
+        .n4{color: #776e65;background-color:#ede0c8;}
+        .n8{background-color:#f2b179;}
+        .n16{background-color:#f59563;}
+        .n32{background-color:#f67c5f;}
+        .n64{background-color:#f65e3b;}
+        .n128{background-color:#edcf72;}
+        .n256{background-color:#edcc61;}
+        .n512{background-color:#9c0;}
+        .n1024{background-color:#33b5e5;}
+        .n2048{background-color:#09c;}
+        .n4096{background-color:#a6c;}
+        .n8192{background-color:#93c;}
+    </style>
+</head>
+<body>
+
+    <div id="main-context">
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+    </div>
+
+    <div id="game-over" class="hiden">
+        <div>
+            <p>GAME OVER</p>
+            <p>Score：<span id="over-score"></span></p>
+            <button id="restart">Try again</button>
+        </div>
+    </div>
+
+    <div id="info">
+        <p>Score: <span id="score">0</span></p>
+        <p>使用“↑，↓，←，→”操作游戏</p>
+    </div>
+</body>
+<script>
+    //初始化
+    var log = console.log.bind(console);
+    var context = document.getElementById("main-context").children;
+    var overShow = document.getElementById("game-over");
+    var overSco = document.getElementById("over-score");
+    var sco = document.getElementById("score");
+    var restart = document.getElementById("restart");
+    var enableMove = {
+        left: false,
+        right: false,
+        up: false,
+        down: false
+    };
+    var score = 0;
+    var data = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+    ];
+
+    //数据填入
+    var fillNum = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<4; j++) {
+                if(data[i][j]!=0) {
+                    context[i*4+j].innerHTML = data[i][j];
+                    context[i*4+j].className = "cell n" + data[i][j].toString();
+                }else{
+                    context[i*4+j].innerHTML = "";
+                    context[i*4+j].className = "cell";
+                }
+                
+            }
+        }
+    }
+
+    //产生随机数
+    var randomNum = function() {
+        while(true) {
+            var row = Math.floor(Math.random()*4);
+            var col = Math.floor(Math.random()*4);
+            if(data[row][col] == 0) {
+                var innerNum = Math.random()<0.5? 2 : 4;
+                data[row][col] = innerNum;
+                fillNum();
+                break;
+            }
+        }
+    }
+
+    //增加分数
+    var addScore = function(val) {
+        score = score + val * 2;
+        sco.innerHTML = score;
+    }
+
+    //判断能否左移
+    var enableToLeft = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if((data[i][j]==0 && data[i][j+1]!=0) || (data[i][j]==data[i][j+1] && data[i][j]!=0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    //判断能否右移
+    var enableToRight = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if((data[i][j]!=0 && data[i][j+1]==0) || (data[i][j]==data[i][j+1] && data[i][j]!=0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    //判断能否上移
+    var enableToUp = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if((data[j][i]==0 && data[j+1][i]!=0) || (data[j][i]==data[j+1][i] && data[j][i]!=0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    //判断能否下移
+    var enableToDown = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if((data[j][i]!=0 && data[j+1][i]==0) || (data[j][i]==data[j+1][i] && data[j][i]!=0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    //左移动
+    var moveLeft = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if(data[i][j]==0 && data[i][j+1]!=0) {
+                    data[i][j] = data[i][j+1];
+                    data[i][j+1] = 0;
+                    j = -1;
+                }else if(data[i][j]==data[i][j+1] && data[i][j]!=0) {
+                    addScore(data[i][j]);
+                    data[i][j] = data[i][j] + data[i][j+1];
+                    data[i][j+1] = 0;
+                    j = -1;
+                }
+            }
+        }
+        randomNum();
+        fillNum();   
+    }
+    //右移动
+    var moveRight = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=3; j>0; j--) {
+                if(data[i][j]==0 && data[i][j-1]!=0) {
+                    data[i][j] = data[i][j-1];
+                    data[i][j-1] = 0;
+                    j = 4;
+                }else if(data[i][j]==data[i][j-1] && data[i][j]!=0) {
+                    addScore(data[i][j]);
+                    data[i][j] = data[i][j] + data[i][j-1];
+                    data[i][j-1] = 0;
+                    j = 4;
+                }
+            }  
+        }
+        randomNum();
+        fillNum();       
+    }
+
+    //上移动
+    var moveUp = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=0; j<3; j++) {
+                if(data[j][i]==0 && data[j+1][i]!=0) {
+                    data[j][i] = data[j+1][i];
+                    data[j+1][i] = 0;
+                    j = -1;
+                }else if(data[j][i]==data[j+1][i] && data[j][i]!=0) {
+                    addScore(data[j][i]);
+                    data[j][i] = data[j][i] + data[j+1][i];
+                    data[j+1][i] = 0;
+                    j = -1;
+                }
+            }
+        }
+        randomNum();
+        fillNum();
+    }
+
+    //下移动
+    var moveDown = function() {
+        for(var i=0; i<4; i++) {
+            for(var j=3; j>0; j--) {
+                if(data[j][i]==0 && data[j-1][i]!=0) {
+                    data[j][i] = data[j-1][i];
+                    data[j-1][i] = 0;
+                    j = 4;
+                }else if(data[j][i]==data[j-1][i] && data[j][i]!=0) {
+                    addScore(data[j][i]);
+                    data[j][i] = data[j][i] + data[j-1][i];
+                    data[j-1][i] = 0;
+                    j = 4;
+                }
+            }
+        }
+        randomNum();
+        fillNum(); 
+    }
+
+    //游戏结束
+    var gameOver = function() {
+        overShow.className = "";
+        overSco.innerHTML = score;
+    }
+
+    //重新开始
+    var gameRestart = function() {
+        overShow.className = "hiden";
+        sco.innerHTML = 0;
+        data = [
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ];
+        randomNum();
+        randomNum();
+        fillNum();
+    }
+
+    //移动设置
+    var moveSet = function() {
+        if(enableToLeft()) {
+            enableMove.left = true;
+        }else{
+            enableMove.left = false;
+        }
+        if(enableToRight()) {
+            enableMove.right = true;
+        }else{
+            enableMove.right = false;
+        }
+        if(enableToUp()) {
+            enableMove.up = true;
+        }else{
+            enableMove.up = false;
+        }
+        if(enableToDown()) {
+            enableMove.down = true;
+        }else{
+            enableMove.down = false;
+        }
+        if(!(enableMove.left || enableMove.right || enableMove.up || enableMove.down)) {
+            gameOver();
+        }
+    }
+
+    //主入口
+    var __main = function() {
+        randomNum();
+        randomNum();
+
+        window.addEventListener("keydown", function(event) {
+            var key = event.keyCode;
+            moveSet();
+            if(key==37 && enableMove.left) {
+                moveLeft();
+            }else if(key==38 && enableMove.up) {
+                moveUp();
+            }else if(key==39 && enableMove.right) {
+                moveRight();
+            }else if(key==40 && enableMove.down) {
+                moveDown();
+            }
+        })
+        restart.addEventListener("click", gameRestart);
+    }
+
+    __main();
+</script>
+</html>
